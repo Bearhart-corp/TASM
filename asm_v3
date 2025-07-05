@@ -7,7 +7,7 @@ const end_str add+r3+R3+im+2
 #injection table
 #####
 #r3 = BASE ← 0x7000
-mov2+r3+im+0x7000
+imov+r3+im+0x7000
 
 
 ecrire+R3+im+97
@@ -100,8 +100,7 @@ ecrire+R3+im+56 #type 0
 next
 ecrire+R3+im+6#ram[12350]
 
-add+r2+R2+im+1 #i++
-add+r3+R1+_r2
+next
 
 #addr = 12351 pour 'or'
 ecrire+R3+im+0x6f 
@@ -286,7 +285,6 @@ ecrire+R3+im+22#ram[12485]
 
 next
 #[12486]rand
-add+r3+R1+_r2
 ecrire+R3+im+0x72
 next
 ecrire+R3+im+0x61
@@ -839,6 +837,10 @@ label debug1
 #ce qui ne limite plus à 0xffff 
 #mais à 0xfffff 
 
+#slot = {char, ptr enfant*2,
+#prt_end*2} dernier slot =
+#overflow *2
+#soit 8*5+2=42 oct par chunk
 
 #@ 3 trie
 const trie.instru 0xc000
@@ -857,6 +859,7 @@ const @bloc_actuel.dest r5
 const @trie1 R1
 const @bloc_actuel1 R5
 const inc lire2+im+7+add
+ 
 ############
 
 imov+r1+im+trie.instru 
@@ -866,18 +869,51 @@ init+r3#[i] pour str
 init+r4#char_act
 init+r5#curseur 1
 init+r6#curseur 2
+init+r7# W
 init+r8#buf
 init+r9#buf_1
 init+r10#buf_2
 init+r11#
 init+r12#
 init+r13#y pour trie
-imov+r7+im+1 #W(el famoso haha)
-#index mémoire libre pour allouer
-#les blocs enfants
+mov+r14+R1 #Copie de root
+init+r15#ptr de la mère
+init+r16#ptr opcode /apres le 0
+
+#dsl ça crée pas de bon block
+# a,d
+# e
+#joue ticpar tick et tkt tu vas
+#trouver
 
 ####################
+
+label insertion
+imov+r1+im+trie.instru 
 call+insere_char
+###################
+add+r3+R3+im+2 #saute les op
+add+r10+R2+_r3
+mov+lire1+R10+r11
+add+r10+R10+im+1
+#vérif si fin dico
+mov+lire1+R10+r12
+eq+R11
+jmp_read+r11
+eq+R12
+jmp_read+r12
+and+r11+R12+_r11
+eq+R11+im+1
+jmp+insertion_var
+init+r10
+init+r11
+init+r12
+###################
+goto+insertion
+label insertion_var
+init+r10
+init+r11
+init+r12
 imov+r1+im+trie.var 
 #root de l'arbre
 imov+r2+im+string.var
@@ -888,24 +924,73 @@ imov+r2+im+string.label
 call+insere_char
 jmp+done
 label insere_char
-pour charger le dico faut l@
-et un curseur
-add+r11+
-logique = charge char du dico, 
-avec une for loop de 8, check 
-3 cases par 3 cases si il y a 
-match jusqu'à trouver un 0, si 
-après les 8 itérations tu ne 
-trouve ni match ni 0 alors à 
-cette adress+1 ajoute le ptr 
-trie_actuel+(w *25) pour créer 
-un nouveau bloc qui sera dans 
-ce cadre un overflow. 
-(comme la création de bloc
- est appelé w est inc de 25).
+imov+r8+im+0 # for i = 8:
+add+r5+R2+_r3 #cur sur dico
+mov+r4+lire1+R5 #Charge le char
+eq+R4 #fin de str
+jmp+end_string
 
-le tout en récursif, 1 call = 
-1 profondeur
+label for_eight
+ge+R8+im+8
+jmp+end_for
+#check si match jusquau 0 or OV
+add+r6+R1+_r13 #cur2 sur trie
+mov+lire1+R6+r10 #char2 récup
+eq+R10+_r4
+jmp+follow_child
+eq+R10+im+0 # 0 ?
+jmp+creer_bloc
+add+r8+R8+im+1
+
+add+r13+R13+im+5 #y+5
+goto+for_eight
+
+label end_for
+label end_string
+
+#r15 a l@ de la mère
+add+r15+R15+im+1 #sur end?
+add+r3+R3+im+1#0->opcode
+mov+r16+R3#ptr index.opcode
+unpack+r10+R16 #P.faible
+ecrire+R15+_r10
+add+r15+R15+im+1 #sur end.2
+oct2+r10+R16
+ecrire+R15+_r10
+ret
+label creer_bloc
+mul+r13+R7+im+42
+add+r1+R1+_r13 #avance le root
+#vers child
+mov+r15+R6 #adress mère
+init+r13
+ecrire+R6+_r4
+add+r13+R13+im+1 #y+1
+add+r7+R7+im+1 #w+1
+add+r6+R1+_r13 #cur2
+#root + (w*42)
+unpack+r10+R7 #oct1 de w in r10
+ #ptr_child #juste w !
+ecrire+R6+_r10 #poids faible w
+add+r13+R13+im+1 #y+1
+add+r6+R1+_r13
+oct2+r10+R7
+ecrire+R6+_r10#poids fort w
+
+add+r3+R3+im+1 
+#parametre dico+1
+init+r13 #y = 0
+
+
+call+insere_char
+ret
+label follow_child
+add+r13+R13+im+1 #y+1
+add+r6+R1+_r13
+mov+lire1+R6+r9 #ptr_child
+init+r13 #réinit de y
+call+insere_char
+ret
 
 label done
 
