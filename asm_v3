@@ -879,7 +879,7 @@ init+r13#y pour trie
 mov+r14+R1 #Copie de root
 init+r15#ptr de la mère
 init+r16#ptr opcode /apres le 0
-
+init+r17#bloc courant in trie
 #dsl ça crée pas de bon block
 # a,d
 # e
@@ -935,6 +935,7 @@ ge+R8+im+8
 jmp+end_for
 #check si match jusquau 0 or OV
 add+r6+R1+_r13 #cur2 sur trie
+add+r6+R6+_r17 #root+y+b.cour
 mov+lire1+R6+r10 #char2 récup
 eq+R10+_r4
 jmp+follow_child
@@ -949,7 +950,7 @@ label end_for
 label end_string
 
 #r15 a l@ de la mère
-add+r15+R15+im+1 #sur end?
+add+r15+R15+im+3 #sur end?
 add+r3+R3+im+1#0->opcode
 mov+r16+R3#ptr index.opcode
 unpack+r10+R16 #P.faible
@@ -957,31 +958,40 @@ ecrire+R15+_r10
 add+r15+R15+im+1 #sur end.2
 oct2+r10+R16
 ecrire+R15+_r10
+init+r17
 ret
 label creer_bloc
-mul+r13+R7+im+42
-add+r1+R1+_r13 #avance le root
-#vers child
+
 mov+r15+R6 #adress mère
-init+r13
+#warning r15 *c.mum not *ptr
+
+#bloc.courant+y+root
+add+r6+R1+_r13
+add+r6+R6+_r17
+##############
 ecrire+R6+_r4
 add+r13+R13+im+1 #y+1
 add+r7+R7+im+1 #w+1
-add+r6+R1+_r13 #cur2
+
+add+r6+R1+_r13
+add+r6+R6+_r17
+
 #root + (w*42)
 unpack+r10+R7 #oct1 de w in r10
  #ptr_child #juste w !
 ecrire+R6+_r10 #poids faible w
 add+r13+R13+im+1 #y+1
 add+r6+R1+_r13
+add+r6+R6+_r17
 oct2+r10+R7
 ecrire+R6+_r10#poids fort w
 
 add+r3+R3+im+1 
 #parametre dico+1
+
+mul+r17+R7+im+42
+#avance le cur.trie
 init+r13 #y = 0
-
-
 call+insere_char
 ret
 label follow_child
