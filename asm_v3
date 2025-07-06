@@ -3,6 +3,84 @@ const goto eq+R1+_r1+jmp
 const init imov+im+0
 const next add+r3+R3+im+1
 const end_str add+r3+R3+im+2
+#####"
+#arbre de débug
+#####
+imov+r3+im+0xf000
+
+# --- "add"
+ecrire+R3+im+0x61  
+next
+ecrire+R3+im+0x64   
+next
+ecrire+R3+im+0x64  
+end_str
+ecrire+R3+im+0x56   
+next
+ecrire+R3+im+0x01   
+next
+
+# --- "adc" 
+#(racine commune avec "add")
+ecrire+R3+im+0x61   
+next
+ecrire+R3+im+0x64   
+next
+ecrire+R3+im+0x63   
+end_str
+ecrire+R3+im+0x56
+next
+ecrire+R3+im+0x02
+next
+
+# --- "ad" 
+#(préfixe de "add", testé à part)
+ecrire+R3+im+0x61
+next
+ecrire+R3+im+0x64
+end_str
+ecrire+R3+im+0x56
+next
+ecrire+R3+im+0x03
+next
+
+# --- "ecrire"
+ecrire+R3+im+0x65
+next
+ecrire+R3+im+0x63
+next
+ecrire+R3+im+0x72
+next
+ecrire+R3+im+0x69
+next
+ecrire+R3+im+0x72
+next
+ecrire+R3+im+0x65
+end_str
+ecrire+R3+im+0x57
+next
+ecrire+R3+im+0x04
+next
+
+# --- "xor"
+ecrire+R3+im+0x78
+next
+ecrire+R3+im+0x6f
+next
+ecrire+R3+im+0x72
+end_str
+ecrire+R3+im+0x58
+next
+ecrire+R3+im+0x05
+next
+
+# --- Fin du dico (terminateur)
+ecrire+R3+im+0x00
+next
+ecrire+R3+im+0x00
+next
+ecrire+R3+im+0x00
+
 #####
 #injection table
 #####
@@ -34,7 +112,8 @@ ecrire+R3+im+0x72
 next
 ecrire+R3+im+0x65#ram[12302]
 end_str
-ecrire+R3+im+32 #type 1 = ctrl ram
+ecrire+R3+im+32 
+#type 1 = ctrl ram
 next
 ecrire+R3+im+16#ram[12305]
 next
@@ -380,7 +459,8 @@ ecrire+R3+im+0x65
 next
 ecrire+R3+im+0x32
 end_str
-ecrire+R3+im+32#type 1 = ctrl ram
+ecrire+R3+im+32
+#type 1 = ctrl ram
 next
 ecrire+R3+im+8#ram[12548]
 
@@ -422,7 +502,8 @@ ecrire+R3+im+0x6d
 next
 ecrire+R3+im+0x70
 end_str
-ecrire+R3+im+32 #type 1 = ctrl ram
+ecrire+R3+im+32 
+#type 1 = ctrl ram
 next
 ecrire+R3+im+128#ram[12575]
 ######
@@ -642,7 +723,8 @@ add+r5+R10+_r7
 
 ########
 #mémorise la val de r3
-mov+r12+R3 #r12 = index de départ
+mov+r12+R3 
+#r12 = index de départ
 #recup les char de la var a +4
 add+r3+R3+im+4
 
@@ -793,7 +875,8 @@ sub+r10+R10+im+1
 ne+R10+im+0
 jmp+match_str
 #else
-imov+lire2+r9+im+11 #réinit curz
+imov+lire2+r9+im+11
+ #réinit curz
 ret
 label fail
 imov+r11+im+0
@@ -846,12 +929,14 @@ label debug1
 const trie.instru 0xc000
 const trie.label 0xd000
 const trie.var 0xe000
+
 ############
 
 #@ 3 dictionnaires
 const string.instru 0x7000
 const string.label 0x4000
 const string.var 0x6000
+const string.debugg 0xf000
 ############
 #autre
 const @trie.dest r1
@@ -862,14 +947,15 @@ const inc lire2+im+7+add
  
 ############
 
-imov+r1+im+trie.instru 
+imov+r1+im+trie.instru
 #root de l'arbre
-imov+r2+im+string.instru 
+imov+r2+im+string.debugg 
 init+r3#[i] pour str
 init+r4#char_act
 init+r5#curseur 1
 init+r6#curseur 2
-init+r7# W
+init+r7
+#add+r7+R7+im+1# W
 init+r8#buf
 init+r9#buf_1
 init+r10#buf_2
@@ -925,20 +1011,24 @@ call+insere_char
 jmp+done
 label insere_char
 imov+r8+im+0 # for i = 8:
-add+r5+R2+_r3 #cur sur dico
-mov+r4+lire1+R5 #Charge le char
-eq+R4 #fin de str
-jmp+end_string
+
 
 label for_eight
 ge+R8+im+8
 jmp+end_for
+##########
+add+r5+R2+_r3 #cur sur dico
+mov+r4+lire1+R5 #Charge le char
+eq+R4 #fin de str
+jmp+end_string
+###########"
 #check si match jusquau 0 or OV
 add+r6+R1+_r13 #cur2 sur trie
 add+r6+R6+_r17 #root+y+b.cour
 mov+lire1+R6+r10 #char2 récup
 eq+R10+_r4
 jmp+follow_child
+
 eq+R10+im+0 # 0 ?
 jmp+creer_bloc
 add+r8+R8+im+1
@@ -959,15 +1049,10 @@ add+r15+R15+im+1 #sur end.2
 oct2+r10+R16
 ecrire+R15+_r10
 init+r17
+init+r7 #w réinit
 ret
 label creer_bloc
-
-mov+r15+R6 #adress mère
-#warning r15 *c.mum not *ptr
-
-#bloc.courant+y+root
-add+r6+R1+_r13
-add+r6+R6+_r17
+mov+r15+R6
 ##############
 ecrire+R6+_r4
 add+r13+R13+im+1 #y+1
@@ -991,14 +1076,28 @@ add+r3+R3+im+1
 
 mul+r17+R7+im+42
 #avance le cur.trie
-init+r13 #y = 0
+init+r13 #y = 0  
+
+
 call+insere_char
 ret
+#poids faible toujours en 1er
 label follow_child
+mov+r15+R6 #mem la mère
 add+r13+R13+im+1 #y+1
 add+r6+R1+_r13
+add+r6+R6+_r17 #bloc courant
 mov+lire1+R6+r9 #ptr_child
+add+r13+R13+im+1 #y+1
+add+r6+R1+_r13
+or+r9+lire1+R6+_r9 #ptr_child.fort
 init+r13 #réinit de y
+add+r6+R1+_r13
+
+mul+r17+R9+im+42 # w*42
+add+r3+R3+im+1 
+add+r7+R7+im+1 #car tu descends
+#parametre dico+1
 call+insere_char
 ret
 
