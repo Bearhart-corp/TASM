@@ -9,6 +9,7 @@ const end_str add+r3+R3+im+2
 imov+r3+im+0xf000
 
 # --- "add"
+
 ecrire+R3+im+0x61  
 next
 ecrire+R3+im+0x64   
@@ -959,68 +960,61 @@ init+r7
 init+r8#buf
 init+r9#buf_1
 init+r10#buf_2
-init+r11#
-init+r12#
+init+r11#buf
+init+r12#buf
 init+r13#y pour trie
-mov+r14+R1 #Copie de root
+init+r14
 init+r15#ptr de la mère
 init+r16#ptr opcode /apres le 0
 init+r17#w*42
-init+r18#bloc.courant
-#set up flag.no_follow
+init+r18#bloc.absolute
 init+r19
 ####################
-
-label insertion
 imov+r1+im+trie.instru 
+label insertion
 call+insere_char
-###################
-add+r3+R3+im+2 #saute les op
-add+r10+R2+_r3
-mov+lire1+R10+r11
-add+r10+R10+im+1
-#vérif si fin dico
-mov+lire1+R10+r12
-eq+R11
-jmp_read+r11
-eq+R12
-jmp_read+r12
-and+r11+R12+_r11
+call+end_dico
 eq+R11+im+1
 jmp+insertion_var
-init+r10
-init+r11
-init+r12
-###################
 goto+insertion
+######################
 label insertion_var
-init+r10
 init+r11
-init+r12
 imov+r1+im+trie.var 
-#root de l'arbre
 imov+r2+im+string.var
+label insertion_var2
 call+insere_char
+call+end_dico
+eq+R11+im+1 #flag 0 AND 0
+jmp+insertion_label
+goto+insertion_var2
+######################
+label insertion_label
+init+r11
 imov+r1+im+trie.label 
-#root de l'arbre
 imov+r2+im+string.label
+label insertion_label2
 call+insere_char
+call+end_dico
+eq+R11+im+1 #flag 0 AND 0
 jmp+done
+goto+insertion_label2
+
+
 label insere_char
 imov+r8+im+0 # for i = 8:
-
 
 label for_eight
 ge+R8+im+8
 jmp+end_for
-##########
+#####
 
-#########
+#####
 add+r5+R2+_r3 #cur sur dico
 mov+r4+lire1+R5 #Charge le char
 eq+R4 #fin de str
 jmp+end_string
-###########"
+
 #check si match jusquau 0 or OV
 add+r6+R1+_r13 #cur2 sur trie
 add+r6+R6+_r17 #root+y+b.cour
@@ -1030,11 +1024,33 @@ jmp+follow_child
 eq+R10+im+0 # 0 ?
 jmp+creer_bloc
 add+r8+R8+im+1
-
 add+r13+R13+im+5 #y+5
 goto+for_eight
 
 label end_for
+#######verif overflow
+add+r13+R13+im+1
+add+r6+R1+_r13 #cur2 sur trie
+add+r6+R6+_r17 #root+y+b.cour
+########
+mov+lire1+r6+r10 #récup char
+eq+R10 #char == 0 ?
+jmp+creer_overflow
+
+label creer_overflow
+
+unpack+r10+R18 #oct1
+ecrire+R6+_r10 #poids faible w
+
+add+r13+R13+im+1 #y+1
+add+r6+R1+_r17
+add+r6+R6+_r13
+
+oct2+r10+R18
+ecrire+R6+_r10#poids fort w
+mul+r17+R18+im+42
+add+r6+R1+_r17#it follows himself
+goto+creer_bloc
 label end_string
 
 #r15 a l@ de la mère
@@ -1051,80 +1067,72 @@ ecrire+R15+_r10
 
 init+r17
 init+r7 #w réinit
-goto+insere_char
+
+ret
+
 label creer_bloc
-
 mov+r15+R6
-add+r6+R1+_r17
-add+r6+R6+_r13
 ##############
-eq+R19+im+0#ne follow pas ou plus
-jmp+change_param
-#else
-jmp+change_pas
-##############
-label change_param
-mul+r17+R18+im+42
-add+r6+R1+_r17
-
-label change_pas
 ecrire+R6+_r4 #write char
-#root + (w*42)
 
-add+r18+R18+im+1 #bloc.courant++
+
+add+r18+R18+im+1 #w.absol
+mul+r17+R7+im+42# r17 = w * 42
 
 add+r13+R13+im+1 #y+1
+add+r6+R1+_r17
 add+r6+R6+_r13
 unpack+r10+R18 #oct1
 ecrire+R6+_r10 #poids faible w
 
 add+r13+R13+im+1 #y+1
+add+r6+R1+_r17
 add+r6+R6+_r13
+
 oct2+r10+R18
 ecrire+R6+_r10#poids fort w
-
-add+r7+R7+im+1 #w+1
-
-
-mul+r17+R7+im+42
-add+r3+R3+im+1 
-#parametre dico+1
-
-#set up flag.no_follow
-init+r19
-
+sub+r13+R13+im+2
 #avance le cur.trie
-init+r13 #y = 0  
-############### alloc new.bloc
-
-
-###############
-call+insere_char
-ret
+#init+r13 #y = 0  
 #poids faible toujours en 1er
 label follow_child
 
-imov+r19+im+1 #flag de follow
-mov+r15+R6 #mem la mère
-
+##########
 add+r13+R13+im+1 #y+1
 add+r6+R1+_r13
 add+r6+R6+_r17 #bloc courant
 mov+lire1+R6+r9 #ptr_child
 add+r13+R13+im+1 #y+1
-add+r6+R1+_r13
+add+r6+R6+_r13
 or+r9+lire1+R6+_r9 #ptr_child.fort
-init+r13 #réinit de y
-add+r6+R1+_r13
-add+r6+R6+_r17
 
-mul+r17+R9+im+42 # w*42
-add+r3+R3+im+1 
-add+r7+R7+im+1 #car tu descends
-#parametre dico+1
-call+insere_char
+mov+r7+R9 # r7 = ptr_bloc
+mul+r17+R7+im+42# r17 = w * 42
+init+r13# y = 0
+add+r6+R1+_r13# r6 = root + y
+add+r6+R6+_r17#root + y + bloc
+add+r3+R3+im+1# next char
+
+goto+insere_char
+
+###########fonctions
+
+label end_dico
+add+r3+R3+im+2 #saute les op
+add+r10+R2+_r3
+mov+lire1+R10+r11
+add+r10+R10+im+1
+#vérif si fin dico
+mov+lire1+R10+r12
+eq+R11
+jmp_read+r11
+eq+R12
+jmp_read+r12
+and+r11+R12+_r11
+init+r10
+init+r12
 ret
-
+###########end fonctions
 label done
 
 
