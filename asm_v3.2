@@ -186,8 +186,6 @@ next
 ecrire+R3+im+0x6f 
 next
 ecrire+R3+im+0x72
-next
-ecrire+R3+im+0
 end_str
 ecrire+R3+im+56 #type 0
 next
@@ -925,15 +923,21 @@ label debug1
 #prt_end*2} dernier slot =
 #overflow *2
 #soit 8*5+2=42 oct par chunk
-
+imov+lire2+r1+im+0x7032
+imov+lire2+r1+im+0x7031
+imov+lire2+r1+im+0x7030
+imov+lire2+r1+im+0x702f
+imov+lire2+r1+im+0x702e
+imov+lire2+r1+im+0x702d
 #@ 3 trie
-const trie.instru 0xc000
-const trie.label 0xd000
-const trie.var 0xe000
+const trie.instru 0x10000
+const trie.label 0x20000
+const trie.var 0x30000
 
 ############
 
-#@ 3 dictionnaires
+#@ 3 dictionnaires 
+#409 mots de 7char en moyenne max
 const string.instru 0x7000
 const string.label 0x4000
 const string.var 0x6000
@@ -950,7 +954,7 @@ const inc lire2+im+7+add
 
 imov+r1+im+trie.instru
 #root de l'arbre
-imov+r2+im+string.debugg 
+imov+r2+im+string.instru 
 init+r3#[i] pour str
 init+r4#char_act
 init+r5#curseur 1
@@ -1029,16 +1033,20 @@ goto+for_eight
 
 label end_for
 #######verif overflow
-add+r13+R13+im+1
+
 add+r6+R1+_r13 #cur2 sur trie
 add+r6+R6+_r17 #root+y+b.cour
 ########
-mov+lire1+r6+r10 #récup char
+mov+lire1+R6+r10 #récup char
 eq+R10 #char == 0 ?
 jmp+creer_overflow
-
+#else ya deja un OV
+sub+r13+R13+im+1#pour contrecarrer
+#le y++ du follow (slot différent)
+goto+follow_child
 label creer_overflow
-
+add+r18+R18+im+1 #w.absol
+mov+r7+R18
 unpack+r10+R18 #oct1
 ecrire+R6+_r10 #poids faible w
 
@@ -1049,7 +1057,8 @@ add+r6+R6+_r13
 oct2+r10+R18
 ecrire+R6+_r10#poids fort w
 mul+r17+R18+im+42
-add+r6+R1+_r17#it follows himself
+add+r6+R1+_r17#it follows hisself
+init+r13
 goto+creer_bloc
 label end_string
 
@@ -1070,7 +1079,9 @@ init+r7 #w réinit
 
 ret
 
+
 label creer_bloc
+imov+r19+im+1#flag
 mov+r15+R6
 ##############
 ecrire+R6+_r4 #write char
@@ -1098,9 +1109,15 @@ sub+r13+R13+im+2
 label follow_child
 
 ##########
+eq+R19+im+1 #si flag
+jmp+skip_only_follow
+call+f_only_follow
+label skip_only_follow
+
 add+r13+R13+im+1 #y+1
 add+r6+R1+_r13
 add+r6+R6+_r17 #bloc courant
+
 mov+lire1+R6+r9 #ptr_child
 add+r13+R13+im+1 #y+1
 add+r6+R6+_r13
@@ -1112,11 +1129,13 @@ init+r13# y = 0
 add+r6+R1+_r13# r6 = root + y
 add+r6+R6+_r17#root + y + bloc
 add+r3+R3+im+1# next char
-
+init+r19#flag = 0
 goto+insere_char
 
 ###########fonctions
-
+label f_only_follow
+mov+r15+R6
+ret
 label end_dico
 add+r3+R3+im+2 #saute les op
 add+r10+R2+_r3
@@ -1135,7 +1154,35 @@ ret
 ###########end fonctions
 label done
 
+###test débug arbre de trie
+ r1+imov+im+0
+ r2+imov+im+0x10000
+ init+r3
+init+r4
+init+r5
+init+r6
+init+r7
+label debug_trie
+#  
 
+
+gt+R4+im+255
+jmp+halt_debugg
+div+R6+im+39+r5
+eq+R5+im+1
+jmp+ov
+add+r7+R2+_r6
+mov+lire1+R7+r1
+ecrire+R3+_r1
+add+r6+R6+im+5
+add+r3+R3+im+1
+add+r4+R4+im+1
+goto+debug_trie
+label halt_debugg
+halt
+label ov
+sub+r6+R6+im+3
+goto+halt_debugg
 ####################
 #arbre de trie end
 ####################
