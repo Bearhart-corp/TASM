@@ -557,6 +557,13 @@ add+r3+R3+im+1
 ecrire+R3+im+0x29#[shift src2]
 add+r3+R3+im+1
 ecrire+R3+im+0x12#[dest.char]
+add+r3+R3+im+1
+ecrire+R3+im+0x1#trie.instru
+#shl >> 16 ->10.000 (>> 2oct)
+add+r3+R3+im+1
+ecrire+R3+im+0x2#trie.label
+add+r3+R3+im+1
+ecrire+R3+im+0x3#trie.var
 imov+r17+im+0 #y++ [var y]
 imov+r18+im+0 #x++ [label x]
 imov+r19+im+0 #z++ [asm z]
@@ -1063,9 +1070,9 @@ goto+creer_bloc
 label end_string
 
 #r15 a l@ de la mère
-add+r15+R15+im+1 #sur end?
-ecrire+R15+im+47 #"/" means end
-add+r15+R15+im+2 #sur end?
+
+
+add+r15+R15+im+3 #sur end?
 add+r3+R3+im+1#0->opcode
 mov+r16+R3#ptr index.opcode
 unpack+r10+R16 #P.faible
@@ -1154,35 +1161,6 @@ ret
 ###########end fonctions
 label done
 
-###test débug arbre de trie
- r1+imov+im+0
- r2+imov+im+0x10000
- init+r3
-init+r4
-init+r5
-init+r6
-init+r7
-label debug_trie
-#  
-
-
-gt+R4+im+255
-jmp+halt_debugg
-div+R6+im+39+r5
-eq+R5+im+1
-jmp+ov
-add+r7+R2+_r6
-mov+lire1+R7+r1
-ecrire+R3+_r1
-add+r6+R6+im+5
-add+r3+R3+im+1
-add+r4+R4+im+1
-goto+debug_trie
-label halt_debugg
-halt
-label ov
-sub+r6+R6+im+3
-goto+halt_debugg
 ####################
 #arbre de trie end
 ####################
@@ -1192,7 +1170,7 @@ goto+halt_debugg
 init+r1
 imov+r2+im+0#v
 imov+r3+im+0#i 
-imov+r4+im+0#buf1
+imov+r4+im+18 # char *buffer
 imov+r5+im+0 #curseur 
 imov+r6+im+0 #c(valeur)
 imov+r7+im+0 #c(valeur2)
@@ -1208,10 +1186,24 @@ imov+r16+im+0#addr.start
 imov+r17+im+0 #y(tables)
 imov+r18+im+0 #binaire 64 bits
 imov+r19+im+8 #pos.token
+init+r20 #flag instr.found
+init+r21 #y (slot.trie)
+init+r22 #w (bloc.trie)
+init+r23 #w*42 (bloc.adress.reel)
+init+r24 #curseur.trie
+
 init+r25 #flag.write
 
-label loop_pass2
+init+r26 #buf
+init+r27 #buf2
+init+r28 #buf3
+init+r29 #old_cursor
+init+r30 #str.x (instru/var/lab)
 
+const str_instru 0x7000
+const str_label 0x4000
+const str_var 0x5000
+label loop_pass2
 lire2+ge+R3+im+0
 #r3 = file[i]
 jmp+end_pass2
@@ -1273,33 +1265,40 @@ goto+read_token
 
 label compare
 #############
-
-imov+lire2+r16+im+5
-shl+r16+R16+im+8
+imov+r30+im+str_instru
+imov+lire2+r16+im+12
+shl+r16+R16+im+16
 add+r5+R17+_r16 #table.start+y
 imov+r2+im+0 #rénit de v
 #il été à la fin du mot
 # call match()
-call+match
-
+call+match_trie
+eq+R20+im+1 
+jmp+loop_pass2
+init+r20
 #else
+imov+r30+im+str_label
 add+r19+R19+im+1#pos.tok++
 imov+r17+im+0 #rénit de y(tables)
 imov+r2+im+0 #rénit de v(dest.c)
-imov+lire2+r16+im+2
-shl+r16+R16+im+8
+imov+lire2+r16+im+13
+shl+r16+R16+im+16
 add+r5+R17+_r16 #label.start+y
 
-call+match
+call+match_trie
+eq+r20+im+1 
+jmp+loop_pass2
+init+r20
 
+imov+r30+im+str_var
 imov+r17+im+0 #rénit de y
 imov+r2+im+0 #rénit de v
-imov+lire2+r16+im+3
-shl+r16+R16+im+8
+imov+lire2+r16+im+14
+shl+r16+R16+im+16
 add+r5+R17+_r16 #var.start+i
 
-call+match
-
+call+match_trie
+init+r20
 #
 
 ###########
@@ -1308,66 +1307,115 @@ goto+loop_pass2
 
 
 label end_pass2
+halt
 ###test débug pass2
-r1+imov+im+0
-r2+imov+im+0x8000
-r3+imov+im+0x50
+#r1+imov+im+0
+#r2+imov+im+0x8000
+#r3+imov+im+0x50
 #
 label debug
 #
-eq+R1+_r3
-jmp+fin_debug
-imov+lire2+_r2+ecrire+R1
-r1+add+R1+im+1
-r2+add+R2+im+1
-eq+R1+_r1
-jmp+debug
+#eq+R1+_r3
+#jmp+fin_debug
+#imov+lire2+_r2+ecrire+R1
+#r1+add+R1+im+1
+#r2+add+R2+im+1
+#eq+R1+_r1
+#jmp+debug
 label fin_debug
-halt
+#halt
 
 #######
 #fonctions
 ######
-label then_match
-#z == v ? if true all char match
-ne+R8+_r2
-eq+R8+im+0
-jmp+skip3#c pas dans cette table
-#else c dans cette table :)
-call+reinit_char_dest
-label ret_skip3
-#f(then_match)
-#v=8-v
-im_fil1+sub+r2+im+8+_r2
-#curz=nb_char+v
-add+r8+R17+_r2
+#####
+#match_trie | lecture arbre
+#####
+label match_trie
+imov+r26+im+0
+label for_loop_trie
+ge+R26+im+8
+jmp+end_for_trie
+#cursor
+add+r24+R16+_r21 #root+y
+mul+r23+R22+im+42 #w*42
+add+r24+R24+_r23 #r+y+w
+
+### if end str
+mov+lire1+r6+R4 #char.actual
+eq+R6 # 0?
+jmp+end_str_read
+### 
 
 
-#r16 != 0x7000
-ne+R16+im+0x7000
-#if true goto take_pointer
-jmp+take_pointer
+mov+lire1+r7+R24 #C.trie
+
+eq+R6+_r7 #match?
+jmp+follow_ptr
 #else
-#r24 = shl ram[i] par ram[i+1](y)
-#curz1 = shift de l'instru
-add+r5+R16+_r8 
-#curz2 = instru à shift
-add+r9+R5+im+1
+add+r21+R21+im+5 #y+5 (slot)
+add+r26+R26+im+1 #i++
+goto+for_loop_trie
+label end_for_trie
+#seeking the overflow value
+add+r24+R24+im+1
+mov+lire1+r7+R24
+eq+R7 #no overflow ?
+jmp+error_detected
+add+r24+R24+im+1
+mov+lire1+r26+R24
+shl+r26+R26+im+8
+or+r7+R7+_r26
+goto+match_trie
+label error_detected
+error
+label follow_ptr
+add+r4+R4+im+1 #char.buf.i
+mov+r29+R24 #old_cursor
+################
 
-lire1+lire2+shl+r11+R9+_r5
-#lit à l'addr des 2curz
-goto+suite_instru
-label take_pointer
+add+r24+R24+im+1 #move to 1oct
+mov+lire1+r28+R24 #recov ptr (weak
+add+r24+R24+im+1 #move to 1oct
+lire1+shl+r27+R24+im+8
+or+r28+R27+_r28
+#read at *r24, or the result+r28
+mov+r22+R28
 
-imov+r11+im+1
-shl+r11+R11+im+32
-#add l'immédiat
-add+r5+R16+_r8 #cur.table
-add+r9+R5+im+1#curz2
-lire1+R9+shl+im+8+r8
-#buf=adress p.fort traduite
-or+R8+_r11+r11#p.fort
-lire1+R5+or+_r11+r11#p.faible
+goto+match_trie
+###end three reading
+label end_str_read
+add+r24+R29+im+3 #old_ptr
+#char -> end
+mov+lire1+r7+R24
+eq+R7 #not end ?
+jmp+not_found
+#else word found
+add+r24+R24+im+1 #end_strong
+lire1+R24+r26
+shl+r26+R26+im+8
+or+r7+R7+_r26
+#weak or strong = complete jump
+add+r9+R30+_r7
+mov+lire1+R9+r26
+add+r9+R9+im+1 #+1 for the shl
+shl+lire1+r18+R9+_r26 
+##translation recovered !
+call+reinit_char_dest
+imov+r20+im+1 #flag found !
+init+r21
+init+r22
+label not_found
+imov+r4+im+18
+ret#go to the next trie
+#instru -> label -> var
+
+
+
+
+
+
+
 
 label suite_instru
 #add+r3+R3+im+1 #i++
@@ -1384,42 +1432,8 @@ label skip3
 ret
 ######
 
-label match
-#while t_corres[y] !=0
-add+r5+R16+_r17
-mov+r7+lire1+R5 #r7 = c2(table)
-lire2+add+r5+R2+im+11
-mov+lire1+R5+r6 # r6 = c(dest)
-#c2=t.corres(c)
-#  while table[y] != 0
-ne+R7+im+0
-jmp+continue
-#else 
-goto+then_match
-label continue
-#  if c1 == c2
-eq+R6+_r7
-jmp+ça_correspond
 
-# //if unmatch
-# v = 10-v
-im_fil1+sub+r2+im+10+_r2
-#y = y+v /pour next_chunk, case0
-add+r17+R17+_r2
-# v = 10-v
-im_fil1+sub+r2+im+10+_r2
-# on récup sa val
-imov+r8+im+0 #flag match
-init+r2
-goto+match
-#   else
-label ça_correspond
-# v++, y++, z = z+1
-add+r2+R2+im+1
-add+r17+R17+im+1
-add+r8+R8+im+1
-# goto match
-goto+match
+
 label write_asm
 #ici fonction finale où on 
 #envoi les 8 oct 1 par 1 
@@ -1467,15 +1481,23 @@ goto+loop_pass2
 #fonction vide buffer char
 label reinit_char_dest
 
-lire2+ecrire+im_fil1+18
-lire2+ecrire+im_fil1+19
-lire2+ecrire+im_fil1+20
-lire2+ecrire+im_fil1+21
-lire2+ecrire+im_fil1+22
-lire2+ecrire+im_fil1+23
-lire2+ecrire+im_fil1+24
-lire2+ecrire+im_fil1+25
+#do while
 
+imov+r26+im+18
+ecrire+R26
+
+label while_char
+add+r26+R26+im+1
+mov+lire1+r27+R26
+eq+R27+0
+jmp+end_reinit_char
+ecrire+R26
+goto+while_char
+#lire2+ecrire+im_fil1+18
+
+label end_reinit_char
+init+r26
+init+r27
 ret
 ##########
 
