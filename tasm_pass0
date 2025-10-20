@@ -6,6 +6,7 @@
 const goto eq+R1+_r1+jmp
 const init imov+im+0
 const table_instru 0x80
+const cache 0x100
 const const_tab 0x2000
 const label_tab 0x3000
 const str_pool 0x5000
@@ -125,7 +126,15 @@ vcmp+ebx+R5+_r6
 ne+ebx1+im+0xff
 r5#init
 jmp+while_const
-call+resolve_const
+
+label skip_trim
+ipp
+mov+lire1+ecx1+edx
+' '+eq+edx1
+eq+edx1+im+9
+jmp+skip_trim
+call+strncpy
+
 halt
 ##################fonctions
 label skip_char
@@ -147,15 +156,19 @@ jmp+while_com
 ipp
 mov+lire1+ecx1+edx
 return+mov+sp1
-label resolve_const
+
+#strncpy(char *strn int size)
+label strncpy
 sp+mov+eax
 add+sp+sp1+im+1
-label skip_trim
+r6+im+const_tab+mov2
+label strncpy1
+lire1+mov+ebx+ecx1
+eq+ebx1+im+32
+jmp+end_copy
+ecrire+R6+ebx2
+add+r6+R6+im+1
 ipp
-mov+lire1+ecx1+edx
-' '+eq+edx1
-eq+edx1+im+9
-jmp+skip_trim
-label resolve
-
+goto+strncpy1
+label end_copy
 return+mov+sp1
